@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Мир приключений</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:system-ui;background:linear-gradient(#172b4d,#101827);color:white;text-align:center}
+header{padding:22px 12px}h1{font-size:clamp(30px,7vw,52px);margin:0}.wrap{max-width:960px;margin:auto;padding:12px}
+.panel{background:#203454;border:1px solid #52739a;border-radius:20px;padding:18px}
+.modes{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+button{border:0;border-radius:13px;padding:14px;background:#76e4ef;color:#102039;font-weight:800;font-size:16px;cursor:pointer}
+.pink{background:#e7b2fa}canvas{width:100%;height:auto;border-radius:14px;background:#9bdcff;touch-action:none}
+#gameArea{display:none}.bar{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin:10px 0}
+.controls{display:flex;justify-content:center;gap:10px;margin-top:10px;flex-wrap:wrap}.hint{font-size:14px;color:#d6e4f5}
+</style></head><body>
+<header><h1>🌟 МИР ПРИКЛЮЧЕНИЙ</h1><p>Выбирай режим и начинай играть!</p></header>
+<main class="wrap"><section class="panel">
+<div id="menu"><h2>Выбери режим</h2><div class="modes">
+<button onclick="start('obby')">🧗 Паркур-обби</button><button class="pink" onclick="start('race')">🏁 Гонка</button><button onclick="start('survival')">☄️ Выживание</button>
+</div><p class="hint">Первая браузерная версия. На компьютере — стрелки или A/D, пробел — прыжок. На телефоне — кнопки.</p></div>
+<div id="gameArea"><div class="bar"><b id="modeName"></b><b id="score">Очки: 0</b><button class="pink" onclick="back()">← Меню</button></div>
+<canvas id="c" width="900" height="480"></canvas><div class="controls"><button id="left">◀</button><button id="jump">ПРЫЖОК</button><button id="right">▶</button></div><p class="hint" id="hint"></p></div>
+</section></main>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');let mode='obby',p,things=[],score=0,t=0,active=false,k={};
+function start(m){mode=m;p={x:65,y:350,vy:0,on:false};things=[];score=0;t=0;active=true;menu.style.display='none';gameArea.style.display='block';modeName.textContent={obby:'🧗 Паркур-обби',race:'🏁 Гонка',survival:'☄️ Выживание'}[m];hint.textContent=m==='obby'?'Прыгай по платформам и коснись зелёного флага!':m==='race'?'Перепрыгивай препятствия и набирай очки.':'Избегай падающих метеоров как можно дольше.';requestAnimationFrame(loop)}
+function back(){active=false;gameArea.style.display='none';menu.style.display='block'}
+function box(a,b,w,h,col){ctx.fillStyle=col;ctx.fillRect(a,b,w,h)}
+function loop(){if(!active)return;t++;ctx.clearRect(0,0,900,480);let g=ctx.createLinearGradient(0,0,0,480);g.addColorStop(0,'#7dd3fc');g.addColorStop(1,'#e0f2fe');ctx.fillStyle=g;ctx.fillRect(0,0,900,480);
+ctx.fillStyle='#ffffff99';for(let i=0;i<5;i++){ctx.beginPath();ctx.arc((i*210-t*.4+1100)%1000,70+i%3*35,22,0,7);ctx.fill()}
+const floor=405;box(0,floor,900,75,mode==='race'?'#64748b':'#4c956c');
+const platforms=[[180,340,110],[350,285,110],[520,330,100],[680,260,110],[820,340,80]];
+if(mode==='obby'){platforms.forEach(a=>box(a[0],a[1],a[2],16,'#8b5cf6'));box(855,190,12,150,'#16a34a');box(840,185,42,25,'#22c55e')}
+if(mode==='race'){for(let a=0;a<900;a+=70)box(a,440,38,7,'white');if(t%85===0)things.push({x:920,y:373,w:28,h:32});things.forEach(o=>{o.x-=5;box(o.x,o.y,o.w,o.h,'#ef4444')})}
+if(mode==='survival'){if(t%40===0)things.push({x:25+Math.random()*850,y:-30,r:14+Math.random()*12,v:2+Math.random()*2});things.forEach(o=>{o.y+=o.v;ctx.beginPath();ctx.arc(o.x,o.y,o.r,0,7);ctx.fillStyle='#f97316';ctx.fill()})}
+p.x=Math.max(0,Math.min(866,p.x+(k.left?-4:k.right?4:0)));p.vy+=.55;p.y+=p.vy;p.on=false;
+if(p.y+44>=floor){p.y=floor-44;p.vy=0;p.on=true}
+if(mode==='obby')platforms.forEach(a=>{if(p.x+34>a[0]&&p.x<a[0]+a[2]&&p.y+44>=a[1]&&p.y+44<a[1]+20&&p.vy>=0){p.y=a[1]-44;p.vy=0;p.on=true}});
+if(mode==='obby'&&p.x>840&&p.y<230){hint.textContent='🎉 Победа! Ты прошёл паркур!';score=100}
+if(mode==='race'){things=things.filter(o=>o.x>-40);things.forEach(o=>{if(p.x+34>o.x&&p.x<o.x+o.w&&p.y+44>o.y){p.x=65;p.y=350;score=Math.max(0,score-5)}});score+=.08}
+if(mode==='survival'){things=things.filter(o=>o.y<500);things.forEach(o=>{if(Math.hypot(p.x+17-o.x,p.y+22-o.y)<o.r+17){p.x=65;p.y=350;score=Math.max(0,score-3)}});score+=.12}
+if(mode==='obby')score=Math.max(score,Math.floor(p.x/10));
+box(p.x,p.y+8,34,36,'#ffcf70');box(p.x+5,p.y+15,7,7,'#26354d');box(p.x+22,p.y+15,7,7,'#26354d');box(p.x+8,p.y+35,18,5,'#e76f51');box(p.x+2,p.y+40,12,7,'#435a86');box(p.x+20,p.y+40,12,7,'#435a86');
+document.getElementById('score').textContent='Очки: '+Math.floor(score);requestAnimationFrame(loop)}
+function jump(){if(!active)return;if(mode==='survival'){p.vy=-8;p.x=Math.max(0,Math.min(866,p.x+(Math.random()-.5)*60))}else if(p.on){p.vy=-11;p.on=false}}
+onkeydown=e=>{if(e.code==='Space'){e.preventDefault();jump()}if(['ArrowLeft','a','A'].includes(e.key))k.left=true;if(['ArrowRight','d','D'].includes(e.key))k.right=true};
+onkeyup=e=>{if(['ArrowLeft','a','A'].includes(e.key))k.left=false;if(['ArrowRight','d','D'].includes(e.key))k.right=false};
+function hold(id,key){let el=document.getElementById(id);el.onpointerdown=e=>{e.preventDefault();k[key]=true};['pointerup','pointerleave','pointercancel'].forEach(v=>el.addEventListener(v,()=>k[key]=false))}
+hold('left','left');hold('right','right');document.getElementById('jump').onpointerdown=jump;
+</script></body></html>
